@@ -12,6 +12,7 @@ namespace JobBoard.Domain.Entities
         public int JobId { get; set; }
         public string Title { get; set; } = string.Empty;
         public int RecruiterId { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public JobStatus Status { get; set; } = JobStatus.Active;
         public DateTime? ClosedAt {  get; set; }
         public int? ClosedBy { get; set; }
