@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using JobBoard.Application.Interfaces;
+﻿using JobBoard.Application.Interfaces;
 using JobBoard.Domain.Entities;
+using JobBoard.Domain.Enums;
 using JobBoard.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,10 +20,16 @@ namespace JobBoard.Infrastructure.Repositories
             return await _context.Jobs.FindAsync(jobId);
         }
 
+        public async Task<List<Job>> GetActiveJobsOlderThanAsync(DateTime date)
+        {
+            return await _context.Jobs
+                .Where(j => j.Status == JobStatus.Active && j.CreatedAt < date)
+                .ToListAsync();
+        }
+
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
     }
 }
-

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using MediatR;
+using Hangfire;
 using JobBoard.Application.Features.Jobs.Commands;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,14 +65,25 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDbContext<JobDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddHangfireServer();
 builder.Services.AddScoped<IJobRepository, JobRepository>();
 builder.Services.AddScoped<JobService>();
+builder.Services.AddScoped<JobAutoCloseService>();
 builder.Services.AddScoped<IApplicationRepository, ApplicationRepository>();
 builder.Services.AddScoped<ApplicationService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<AuthService>();
 var app = builder.Build();
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
 
+recurringJobManager.AddOrUpdate<JobAutoCloseService>(
+    "auto-close-old-jobs",
+    service => service.AutoCloseJobsAsync(),
+    Cron.Daily);
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -82,7 +94,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseHangfireDashboard();
 app.MapControllers();
 
 app.Run();
